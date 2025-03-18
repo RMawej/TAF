@@ -80,7 +80,7 @@ export class AddTestDialogComponent implements OnInit {
       method: this.method,
       apiUrl: this.apiUrl,
       responseTime: this.responseTime,
-      expectedOutput: "",
+      expectedOutput: this.expectedOutput,
       input:"",
       statusCode: this.statusCode,
       headers: {},

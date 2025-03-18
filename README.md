@@ -30,10 +30,41 @@ Il est aussi possible de lancer les applications côté serveur et côté client
 - Installez maven sur votre système avec `mvn clean install`.
 - Configurez l'application Springboot dans votre ide (Eclipse, IntelliJ). Des outils sont disponibles dans ces IDEs pour lancer l'application.
 
-**Frontend :**
-- Installez des dépendances avec `npm install`.
-- Lancez l'application avec la ligne de commande
-`ng serve --o`.
+**TestAPI**
+
+- Dans le répertoire `testapi`, exécutez :
+
+```bash
+cd testapi
+mvn clean install
+```
+
+- Puis lancez l’API de test avec :
+
+```bash
+mvn spring-boot:run
+```
+
+- L’API sera accessible sur le port configuré (par défaut, [http://localhost:8080](http://localhost:8080)).
+
+---
+
+**Frontend**
+
+- Assurez-vous d’avoir **Node.js** et **npm** installés sur votre système.  
+- Dans le répertoire `frontend`, installez les dépendances avec :
+
+```bash
+cd frontend
+npm install
+```
+
+- Lancez l’application avec la ligne de commande :
+
+```bash
+ng serve --open
+```
+- L’interface s’ouvrira automatiquement dans votre navigateur à l’adresse [http://localhost:4200]
 
 ## Contribuer au projet
 

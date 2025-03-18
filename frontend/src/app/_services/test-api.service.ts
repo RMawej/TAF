@@ -15,14 +15,36 @@ export class TestApiService {
   REST_API: string = environment.apiUrl
   constructor(private http: HttpClient) { }
 
-  //execute tests one by one
   executeTests(dataTests: testModel2[]): Observable<TestResponseModel[]> {
     return forkJoin(
-      dataTests.map(test =>
-        this.http.post<TestResponseModel>(`${this.REST_API}/microservice/testapi/checkApi`, test)
-      )
+      dataTests.map(test => {
+        const sanitizedTest = {
+          ...test,
+          headers: typeof test.headers === 'object' ? test.headers : JSON.parse(test.headers || '{}')
+        };
+  
+        console.log('Payload envoyé:', sanitizedTest); // Vérifie ce qui est envoyé
+  
+        return this.http.post<TestResponseModel>(
+          `${this.REST_API}/microservice/testapi/checkApi`, 
+          sanitizedTest,
+          { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
+        ).pipe(
+          catchError(this.handleError)
+        );
+      })
     );
   }
+  
+  
+  
+  private handleError(error: HttpErrorResponse) {
+    console.error('Erreur détectée:', error);
+    console.error('Réponse du serveur:', error.error);
+    return throwError(() => new Error(error.error?.message || 'Une erreur est survenue lors de l\'exécution des tests.'));
+  }
+  
+  
 
 //to refresh automatically the tests's  list
   private testsSubject: BehaviorSubject<testModel2[]> = new BehaviorSubject<testModel2[]>([]);
@@ -53,24 +75,25 @@ export class TestApiService {
 
   // Update the status of test executions using index
   updateTestsStatusExecution(listTestsResponses: TestResponseModel[]) {
-    // Ensure the response list length is equal to the test list length
+    // Vérifie que le nombre de réponses correspond au nombre de tests
     if (listTestsResponses.length !== this.listTests.length) {
-      console.error('The number of responses does not match the number of tests.');
+      console.error('Le nombre de réponses ne correspond pas au nombre de tests.');
       return;
     }
 
-    // Iterate over the responses and update the corresponding test by index
+    // Parcours chaque réponse et met à jour le test correspondant
     listTestsResponses.forEach((response, index) => {
-      // Directly using the index to update the status
-      if (this.listTests[index]) { // Check if the test exists at this index
+      if (this.listTests[index]) { // Vérifie si le test existe à cet index
         this.listTests[index].responseStatus = response.answer;
+        this.listTests[index].messages = response.messages || []; // Mise à jour des erreurs
       } else {
-        console.error(`No test found at index ${index}`);
+        console.error(`Aucun test trouvé à l'index ${index}`);
       }
     });
 
-    // Emit the updated test list
+    // Met à jour la liste des tests pour rafraîchir l'affichage
     this.testsSubject.next([...this.listTests]);
   }
+
 
 }

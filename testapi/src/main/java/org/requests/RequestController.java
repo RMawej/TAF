@@ -16,6 +16,7 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 
 public class RequestController {
+    
     private final TestApiRequest request;
     private final RequestSpecification httpRequest;
     private Response response;
@@ -24,6 +25,8 @@ public class RequestController {
     private final List<String> messages = new ArrayList<>();
 
     public RequestController(TestApiRequest request) {
+        System.out.println("############### DEBUG : RequestController INITIALISÉ ###############");
+
         this.request = request;
         this.httpRequest = given()
                 .header("Content-Type", "application/json")
@@ -32,23 +35,64 @@ public class RequestController {
     }
 
     public Answer getAnswer() {
+        System.out.println("############### DEBUG : getAnswer() appelé ###############");
+
         this.execute();
         Answer answer = new Answer();
         answer.statusCode = this.response.getStatusCode();
         answer.output = this.response.getBody().asPrettyString();
-        answer.answer = this.checkStatusCode() && this.checkOutput() && this.checkResponseTime() && this.checkResponseHeaders();
+
+        boolean statusOK = this.checkStatusCode();
+        boolean outputOK = this.checkOutput();
+        boolean timeOK = this.checkResponseTime();
+        boolean headersOK = this.checkResponseHeaders();
+
+        System.out.println("DEBUG : checkStatusCode() = " + statusOK);
+        System.out.println("DEBUG : checkOutput() = " + outputOK);
+        System.out.println("DEBUG : checkResponseTime() = " + timeOK);
+        System.out.println("DEBUG : checkResponseHeaders() = " + headersOK);
+
+        // Initialiser answer.answer à true
+        answer.answer = true;
+
+        // Ajouter les erreurs dans messages
+        if (!statusOK) {
+            answer.messages.add("❌ Erreur : Le code de statut ne correspond pas à l'attendu !");
+            answer.answer = false;
+        }
+        if (!outputOK) {
+            answer.messages.add("❌ Erreur : Le contenu de la réponse ne correspond pas à l'attendu !");
+            answer.answer = false;
+        }
+        /*if (!timeOK) {
+            answer.messages.add("❌ Erreur : Temps de réponse trop long !");
+            answer.answer = false;
+        }*/
+        if (!headersOK) {
+            answer.messages.add("❌ Erreur : Les headers ne correspondent pas à ceux attendus !");
+            answer.answer = false;
+        }
+
         answer.fieldAnswer = this.fieldAnswer;
-        answer.messages = this.messages;
+
+        System.out.println("💡 DEBUG : Résultat final de answer.answer = " + answer.answer);
+        System.out.println("💡 DEBUG : Messages d'erreur = " + answer.messages);
+
         return answer;
     }
+
+
 
     private void execute() {
         this.response = this.request.getMethod().execute(this.httpRequest, this.request.getApiUrl());
     }
 
     private boolean checkStatusCode() {
+        System.out.println("Expected Status Code: " + this.request.getStatusCode());
+        System.out.println("Actual Status Code: " + this.response.getStatusCode());
         return this.request.getStatusCode() == this.response.getStatusCode();
     }
+
 
     /**
      * This method checks the output of a request against the expected output.
@@ -61,23 +105,63 @@ public class RequestController {
     private boolean checkOutput() {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode expectedOutput = this.request.getExpectedOutput();
-        if (expectedOutput.isEmpty()){
+        System.out.println("DEBUG : expectedOutput brut = " + expectedOutput);
+
+        // Si aucun expectedOutput ou texte vide, ignorer la comparaison
+        if (expectedOutput == null ||
+            (expectedOutput.isTextual() && expectedOutput.asText().trim().isEmpty())) {
+            System.out.println("DEBUG : Aucun expectedOutput défini.");
             return true;
         }
-        JsonNode output = null;
-        try {
-            output = mapper.readTree(this.response.getBody().asPrettyString());
-        } catch (JsonProcessingException e) {
-            this.messages.add("Impossible to parse the output");
+
+        if (expectedOutput.isTextual()) {
+            String expectedText = expectedOutput.asText().trim();
+            System.out.println("DEBUG : expectedOutput en texte = " + expectedText);
+
+            // Ajout automatique des {} si le JSON semble incomplet
+            if (!expectedText.startsWith("{") && !expectedText.startsWith("[") &&
+                !expectedText.endsWith("}") && !expectedText.endsWith("]")) {
+                expectedText = "{" + expectedText + "}";
+                System.out.println("DEBUG : expectedText modifié avec {} = " + expectedText);
+            }
+
+            try {
+                expectedOutput = mapper.readTree(expectedText);
+                System.out.println("DEBUG : expectedOutput parsé = " + expectedOutput);
+            } catch (JsonProcessingException e) {
+                System.out.println("DEBUG : Erreur lors du parsing de expectedOutput : " + e.getMessage());
+                return false;
+            }
         }
 
-        // Generate a detailed report of the json comparison. It has the field structure of `expectedOutput`.
-        // A field  `true` significate that the field exist with the same value in `ouput` and `expectedOutput`
-        // A field  `false` significate that the field doesn't exist/have the same value in `output`
-        this.fieldAnswer = JsonComparator.compareJson(expectedOutput, output, mapper.createObjectNode());
+        // Si expectedOutput est un objet vide, ignorer la comparaison
+        if (expectedOutput.isObject() && expectedOutput.size() == 0) {
+            System.out.println("DEBUG : expectedOutput est vide (objet vide).");
+            return true;
+        }
 
-        return expectedOutput.equals(output);
+        // Parser la réponse reçue
+        JsonNode output;
+        try {
+            String responseBody = this.response.getBody().asPrettyString();
+            System.out.println("DEBUG : Réponse brute = " + responseBody);
+            output = mapper.readTree(responseBody);
+            System.out.println("DEBUG : Output parsé = " + output);
+        } catch (JsonProcessingException e) {
+            System.out.println("DEBUG : Erreur lors du parsing de la réponse : " + e.getMessage());
+            return false;
+        }
+
+        // Comparaison JSON
+        this.fieldAnswer = JsonComparator.compareJson(expectedOutput, output, mapper.createObjectNode());
+        System.out.println("DEBUG : Différence (fieldAnswer) = " + this.fieldAnswer);
+
+        boolean result = expectedOutput.equals(output);
+        System.out.println("DEBUG : Résultat de la comparaison = " + result);
+        return result;
     }
+
+
 
 
     private boolean checkResponseTime() {

@@ -1,8 +1,11 @@
 <h1 style="text-align: center;"> Liste des tests</h1>
 
+<!-- Ajout du champ pour importer un fichier CSV -->
+<div style="text-align: center; margin-bottom: 10px;">
+  <input type="file" (change)="importCSV($event)" accept=".csv">
+</div>
 
 <table mat-table [dataSource]="dataTests" class="mat-elevation-z8">
-
 
   <ng-container matColumnDef="id">
     <th mat-header-cell *matHeaderCellDef> id </th>
@@ -30,16 +33,17 @@
   </ng-container>
 
   <ng-container matColumnDef="responseStatus">
-    <th mat-header-cell *matHeaderCellDef> resultat du test </th>
+    <th mat-header-cell *matHeaderCellDef> Résultat du test </th>
     <td mat-cell *matCellDef="let row"
-        [ngStyle]="{'color': row.responseStatus === true ? 'green' : (row.responseStatus === false ? 'red' : 'black') }">
-      {{ row.responseStatus }} </td>
+        [ngStyle]="{'color': row.responseStatus === true ? 'green' : (row.responseStatus === false ? 'red' : 'black') }"
+        [matTooltip]="row.responseStatus === false && row.messages?.length ? row.messages.join(', ') : ''">
+      {{ row.responseStatus }}
+    </td>
   </ng-container>
-
-
+  
+  
   <ng-container matColumnDef="action">
-    <mat-header-cell *matHeaderCellDef >
-
+    <mat-header-cell *matHeaderCellDef>
       <button mat-raised-button color="primary" (click)="lunchTests()">lancer les tests</button>
 
       <button mat-icon-button class="download-button" (click)="exportCSV()">
@@ -49,7 +53,6 @@
       <button mat-icon-button color="primary">
         <mat-icon aria-label="Example icon-button with a heart icon" (click)="addTest()">add</mat-icon>
       </button>
-
     </mat-header-cell>
 
     <th mat-header-cell *matHeaderCellDef> actions </th>

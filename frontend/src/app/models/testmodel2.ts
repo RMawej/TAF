@@ -8,6 +8,7 @@ export interface testModel2 {
     expectedOutput?: string;
     statusCode?: number;
     responseStatus?: boolean;
+    messages?: string[];
     expectedHeaders:  { [key: string]: string };
 
 

@@ -36,6 +36,7 @@ import { PerformanceTestApiComponent } from './performance-test-api/performance-
 import { GatlingApiComponent } from './performance-test-api/gatling-api/gatling-api.component';
 import { JmeterApiComponent } from './performance-test-api/jmeter-api/jmeter-api.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ErrorDialogComponent } from './interface-test-api/test-api/error-dialog.component';
 
 
 
@@ -55,7 +56,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     TestSeleniumComponent,
     PerformanceTestApiComponent,
     GatlingApiComponent,
-    JmeterApiComponent
+    JmeterApiComponent,
+    ErrorDialogComponent
   ],
 
     imports: [

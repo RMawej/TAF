@@ -5,6 +5,7 @@ COPY . .
 
 RUN mvn package -D maven.test.skip
 
+
 FROM openjdk:17-slim as runner
 
 WORKDIR /code

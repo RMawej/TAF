@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ENV_FILE=".docker_config.env"
 if [ ! -f "$ENV_FILE" ]; then
     echo "Erreur : Le fichier $ENV_FILE n'existe pas."
